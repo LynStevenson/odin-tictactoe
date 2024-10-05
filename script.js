@@ -1,8 +1,8 @@
 const Gameboard = function(){
-	let gameboard = Array(9).fill("_");
+	let gameboard = Array(9).fill("\xa0");
 	//placement functions return true if piece is placed, otherwise returns false
 	function playX (pos){
-		if (gameboard[pos] === "_"){
+		if (gameboard[pos] === "\xa0"){
 			gameboard[pos] = "X";
 			return true;
 		} else {
@@ -10,7 +10,7 @@ const Gameboard = function(){
 		}
 	}
 	function playO (pos){
-		if (gameboard[pos] === "_"){
+		if (gameboard[pos] === "\xa0"){
 			gameboard[pos] = "O";
 			return true;
 		} else {
@@ -18,16 +18,52 @@ const Gameboard = function(){
 		}
 	}
 	function clear(){
-		gameboard = gameboard.fill("_");
+		gameboard = gameboard.fill("\xa0");
 	}
 	function filled(){
-		if (gameboard.indexOf("_") === -1){
+		if (gameboard.indexOf("\xa0") === -1){
 			return true;
 		} else {
 			return false;
 		}
 	}
-	function status(){ //returns -1 if X has a winning condition, 0 for neither, 1 if O has a winning condition
+	function getBoard(){
+		return gameboard.slice(0,3).toString() + "\n" + gameboard.slice(3,6) + "\n" + gameboard.slice(6,9);
+	}
+	function getPieceAt(index){
+		return gameboard[index];
+	}
+	return {
+		playO,
+		playX,
+		clear,
+		filled,
+		getBoard,
+		getPieceAt
+	};
+}();
+
+const Player = function(name){
+	this.score = 0;
+	this.name = name;
+}
+
+const Game = function(){
+	//player1 is X
+	let turn = "X";
+	function getTurn(){
+		return turn;
+	}
+	function newGame(){
+		Gameboard.clear();
+	}
+	const Gamestates = Object.freeze({
+			Xwin: "Xwin",
+			OWin: "Owin",
+			tie: "tie",
+			ongoing: "ongoing"
+		});
+	function state(){
 		const lines = [
 			"012",
 			"345",
@@ -42,54 +78,26 @@ const Gameboard = function(){
 			const positions = line.split("");
 			let pieces = [];
 			for (let pos of positions){
-				pieces.push(gameboard[pos]);
+				pieces.push(Gameboard.getPieceAt([pos]));
 			}
 			pieces = pieces.join("");
 			if (pieces === "OOO"){
-				return 1;
+				return Gamestates.OWin;
 			} else if (pieces === "XXX") {
-				return -1;
+				return Gamestates.Xwin;
 			}
 		}
-		return 0;
-	}
-	function getBoard(){
-		return gameboard.slice(0,3).toString() + "\n" + gameboard.slice(3,6) + "\n" + gameboard.slice(6,9);0
-	}
-	function getPieceAt(index){
-		return gameboard[index];
-	}
-	return {
-		playO,
-		playX,
-		clear,
-		filled,
-		status,
-		getBoard,
-		getPieceAt
-	};
-}();
-
-const Player = function(name){
-	this.score = 0;
-	this.name = name;
-}
-
-const Game = function(){
-	let turn = "X"; //player1 is X
-	function getTurn(){
-		return turn;
-	}
-	function newGame(){
-		Gameboard.clear();
-		turn = "X";
+		if (Gameboard.filled()){
+			return Gamestates.tie;
+		}
+		return Gamestates.ongoing;
 	}
 	function consoleGameLoop(player1, player2){
 		if (player1 === undefined || player2 === undefined){
 			return;
 		}
 		newGame();
-		while(!Gameboard.filled() && Gameboard.status() === 0){
+		while(state() === Gamestates.ongoing){
 			if (turn === "X"){
 				console.log("X's turn");
 				console.log(Gameboard.getBoard());
@@ -103,10 +111,10 @@ const Game = function(){
 			}
 		}
 		console.log(Gameboard.getBoard());
-		if (Gameboard.status() === -1){
+		if (state() === Gamestates.Xwin){
 			console.log(player1.name + " wins!");
 			player1.score++;
-		} else if (Gameboard.status() === 1){
+		} else if (state() === Gamestates.OWin){
 			console.log(player2.name + " wins!");
 			player2.score++;
 		} else {
@@ -117,57 +125,92 @@ const Game = function(){
 		if (turn === "X"){
 			if (Gameboard.playX(index)){
 				turn = "O";
+				return true;
 			}
 		} else if (turn === "O"){
 			if (Gameboard.playO(index)){
 				turn = "X";
+				return true;
 			}
 		}
+		return false;
 	}
 	return {
 		consoleGameLoop,
 		getTurn,
 		playPiece,
-		newGame
+		newGame,
+		state,
+		Gamestates
 	};
 }()
 
-//lots of janky code. will clean up later
+let modal = document.querySelector("dialog");
+modal.showModal();
 
-jack = new Player("Jack");
-sarah = new Player("Sarah");
+let player1 = new Player("Player1");
+let player2 = new Player("Player2");
+
+let modalForm = document.querySelector("dialog form");
+modalForm.addEventListener("submit", function(){
+	player1Name = document.querySelector("#player1Input");
+	player2Name = document.querySelector("#player2Input");
+	player1.name = player1Name.value;
+	player2.name = player2Name.value;
+	document.querySelector("#player1Label").textContent = player1.name + ":";
+	document.querySelector("#player2Label").textContent = player2.name + ":";
+	msg.textContent = "It is " + player1.name + "'s turn";
+})
 
 let board = document.querySelector("table");
 let cells = document.querySelectorAll("td");
+let msg = document.querySelector(".msg");
 let player1out = document.querySelector("#player1");
 let player2out = document.querySelector("#player2");
-player1out.textContent = jack.score;
-player2out.textContent = sarah.score;
+player1out.textContent = player1.score;
+player2out.textContent = player2.score;
+
+const disableClick = function(e){
+	e.stopPropagation();
+}
+
 for (let i = 0; i < 9; i++){
 	cells[i].addEventListener("click", function(){
 		Game.playPiece(i);
 		cells[i].textContent = Gameboard.getPieceAt(i);
-		if (Gameboard.filled() || Gameboard.status() !== 0){
-			if (Gameboard.status() === -1){
-				jack.score++;//will fix jank later
-			} else if (Gameboard.status() === 1){
-				sarah.score++;
+		if (Game.state() !== Game.Gamestates.ongoing){
+			if (Game.state() === Game.Gamestates.Xwin){
+				player1.score++;
+				msg.textContent = player1.name + " won the game!";
+			} else if (Game.state() === Game.Gamestates.OWin){
+				player2.score++;
+				msg.textContent = player2.name + " won the game!";
 			} else {
-				
+				msg.textContent = "It is a tie!";
 			}
-			player1out.textContent = jack.score;
-			player2out.textContent = sarah.score;
-			board.addEventListener("click", function(e){
-				e.stopPropagation();
-			}, {capture: true});
+			player1out.textContent = player1.score;
+			player2out.textContent = player2.score;
+			board.addEventListener("click", disableClick, {capture: true});
+		} else {
+			if (Game.getTurn() === "X"){
+				msg.textContent = "It is " + player1.name + "'s turn";
+			} else {
+				msg.textContent = "It is " + player2.name + "'s turn";
+			}
 		}
 	})
 }
 
-let newGameButton = document.querySelector("button");
+let newGameButton = document.querySelector(".newGame");
 newGameButton.addEventListener("click", function(){
 	Game.newGame();
 	for (let i = 0; i < 9; i++){
 		cells[i].textContent = Gameboard.getPieceAt(i);
+	}
+	board.removeEventListener("click", disableClick, {capture: true});
+	if (Game.getTurn() === "X"){
+		msg.textContent = "It is " + player1.name + "'s turn";
+	} else {
+		msg.textContent = "It is " + player2.name + "'s turn";
 	}
 })
