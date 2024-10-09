@@ -159,12 +159,13 @@ modalForm.addEventListener("submit", function(){
 	player2.name = player2Name.value;
 	document.querySelector("#player1Label").textContent = player1.name + ":";
 	document.querySelector("#player2Label").textContent = player2.name + ":";
-	msg.textContent = "It is " + player1.name + "'s turn";
+	msg.textContent = "It is " + player1.name + "'s turn\r\nPlace an X!";
 })
 
 let board = document.querySelector("table");
 let cells = document.querySelectorAll("td");
 let msg = document.querySelector(".msg");
+msg.setAttribute("style", "white-space: pre;");
 let player1out = document.querySelector("#player1");
 let player2out = document.querySelector("#player2");
 player1out.textContent = player1.score;
@@ -193,9 +194,9 @@ for (let i = 0; i < 9; i++){
 			board.addEventListener("click", disableClick, {capture: true});
 		} else {
 			if (Game.getTurn() === "X"){
-				msg.textContent = "It is " + player1.name + "'s turn";
+				msg.textContent = "It is " + player1.name + "'s turn.\r\nPlace an X!";
 			} else {
-				msg.textContent = "It is " + player2.name + "'s turn";
+				msg.textContent = "It is " + player2.name + "'s turn.\r\nPlace an O!";
 			}
 		}
 	})
