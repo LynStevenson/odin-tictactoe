@@ -159,7 +159,7 @@ modalForm.addEventListener("submit", function(){
 	player2.name = player2Name.value;
 	document.querySelector("#player1Label").textContent = player1.name + ":";
 	document.querySelector("#player2Label").textContent = player2.name + ":";
-	msg.textContent = "It is " + player1.name + "'s turn\r\nPlace an X!";
+	msgPrint();
 })
 
 let board = document.querySelector("table");
@@ -173,6 +173,14 @@ player2out.textContent = player2.score;
 
 const disableClick = function(e){
 	e.stopPropagation();
+}
+
+const msgPrint = function(){
+	if (Game.getTurn() === "X"){
+		msg.textContent = "It is " + player1.name + "'s turn.\r\nPlace an X!";
+	} else {
+		msg.textContent = "It is " + player2.name + "'s turn.\r\nPlace an O!";
+	}
 }
 
 for (let i = 0; i < 9; i++){
@@ -193,11 +201,7 @@ for (let i = 0; i < 9; i++){
 			player2out.textContent = player2.score;
 			board.addEventListener("click", disableClick, {capture: true});
 		} else {
-			if (Game.getTurn() === "X"){
-				msg.textContent = "It is " + player1.name + "'s turn.\r\nPlace an X!";
-			} else {
-				msg.textContent = "It is " + player2.name + "'s turn.\r\nPlace an O!";
-			}
+			msgPrint();
 		}
 	})
 }
@@ -209,9 +213,5 @@ newGameButton.addEventListener("click", function(){
 		cells[i].textContent = Gameboard.getPieceAt(i);
 	}
 	board.removeEventListener("click", disableClick, {capture: true});
-	if (Game.getTurn() === "X"){
-		msg.textContent = "It is " + player1.name + "'s turn";
-	} else {
-		msg.textContent = "It is " + player2.name + "'s turn";
-	}
+	msgPrint();
 })
